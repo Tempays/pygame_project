@@ -6,6 +6,8 @@ import pygame
 FPS = 144
 clock = pygame.time.Clock()
 
+size = WIDTH, HEIGHT = 500, 500
+
 player = None
 
 tiles_group = pygame.sprite.Group()
@@ -14,27 +16,21 @@ tile_width = tile_height = 50
 
 
 class RhombusSprite(pygame.sprite.Sprite):
-    def __init__(self, x, y, length, color):
+    def __init__(self, x, y, length):
         super().__init__(tiles_group, all_sprites)
         self.x = x * length
         self.y = y * length
         self.diagonal = (2 * length ** 2) ** 0.5
-        self.color = color
-        self.image = pygame.image
-
-    def draw(self, surface):
-        points = [
-            (self.x, self.y),
-            (self.x + self.diagonal / 2 + 20, self.y - self.diagonal / 2),
-            (self.x + self.diagonal + 40, self.y),
-            (self.x + self.diagonal / 2 + 20, self.y + self.diagonal / 2)
-        ]
-        pygame.draw.polygon(surface, self.color, points)
-        # Отрисовка ромба в зависимости от карты нуждается в доработке
+        self.image = (load_image('stone_tile.png')).convert_alpha()
+        self.image = pygame.transform.rotate(self.image, 120)  # Поворот на 12 градусов
+        self.image = pygame.transform.scale(self.image, (130, 80))
+        self.rect = self.image.get_rect()
+        self.rect.x = self.x
+        self.rect.y = self.y
 
 
 def load_image(name, colorkey=None):
-    fullname = os.path.join('../../Desktop/task/data', name)
+    fullname = "data/" + name
     if not os.path.isfile(fullname):
         print(f"Файл с изображением '{fullname}' не найден")
         sys.exit()
@@ -57,7 +53,7 @@ def generate_level(level):
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == '.':
-                RhombusSprite(x, y, tile_width, pygame.Color('brown'))
+                RhombusSprite(1.5 * x + y, y - 0.5 * x, tile_width)
     return x, y, level
 
 
@@ -70,7 +66,7 @@ def play_cycle():
     clock.tick(FPS)
     screen.fill('black')
     pygame.display.flip()
-    level = load_level(input())
+    level = load_level('map.txt')
     if level is None:
         print('Этого файла не существует')
         terminate()
@@ -83,13 +79,11 @@ def play_cycle():
                 terminate()
 
         screen.fill('black')
-        for sprite in all_sprites:
-            sprite.draw(screen)
+        all_sprites.draw(screen)
         pygame.display.flip()
 
 
 pygame.init()
-# size = WIDTH, HEIGHT = pygame.display.Info().current_w, pygame.display.Info().current_h
-size = WIDTH, HEIGHT = 500, 500
+size = WIDTH, HEIGHT = pygame.display.Info().current_w, pygame.display.Info().current_h
 screen = pygame.display.set_mode(size)
 play_cycle()
