@@ -22,8 +22,8 @@ class RhombusSprite(pygame.sprite.Sprite):
         self.y = y * length
         self.diagonal = (2 * length ** 2) ** 0.5
         self.image = (load_image('stone_tile.png')).convert_alpha()
-        self.image = pygame.transform.rotate(self.image, 120)  # Поворот на 12 градусов
-        self.image = pygame.transform.scale(self.image, (130, 80))
+        self.image = pygame.transform.rotate(self.image, 120)
+        self.image = pygame.transform.scale(self.image, (132, 78))
         self.rect = self.image.get_rect()
         self.rect.x = self.x
         self.rect.y = self.y
