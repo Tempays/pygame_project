@@ -13,6 +13,7 @@ player = None
 tiles_group = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
 right_walls = pygame.sprite.Group()
+special = pygame.sprite.Group()
 tile_width = 70
 wall_hight = 50
 
@@ -79,6 +80,14 @@ def load_level(filename):
     return level_map
 
 
+def set_right_wall(x, y):
+    return RightWallSprite(x + y, 0.5 * y - 0.5 * x - 0.007 * tile_width, tile_width)
+
+
+def set_left_wall(x, y):
+    return LeftWallSprite(x + y + 0.014 * tile_width, 0.5 * y - 0.5 * x - 0.007 * tile_width, tile_width)
+
+
 def generate_level(level):
     new_player, x, y = None, None, None
     for y in range(len(level)):
@@ -86,13 +95,18 @@ def generate_level(level):
             if level[y][x] == '.':
                 RhombusSprite(x + y, 0.5 * y - 0.5 * x, tile_width)
             elif level[y][x] == 'R':
-                RightWallSprite(x + y, 0.5 * y - 0.5 * x - 0.007 * tile_width, tile_width)
-            elif level[y][x] == 'W':
-                pass
+                set_right_wall(x, y)
     for y in range(len(level) - 1, -1, -1):
         for x in range(len(level[y]) - 1, -1, -1):
             if level[y][x] == 'L':
-                LeftWallSprite(x + y + 0.014 * tile_width, 0.5 * y - 0.5 * x - 0.007 * tile_width, tile_width)
+                set_left_wall(x, y)
+            elif level[y][x] == 'W':
+                set_right_wall(x, y)
+                set_left_wall(x, y)
+            elif level[y][x] == 'M':
+                wall = set_right_wall(x, y)
+                special.add(wall)
+                set_left_wall(x, y - 1)
     return x, y, level
 
 
@@ -120,6 +134,7 @@ def play_cycle():
         screen.fill('black')
         all_sprites.draw(screen)
         right_walls.draw(screen)
+        special.draw(screen)
         pygame.display.flip()
 
 
