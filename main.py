@@ -42,6 +42,18 @@ class RightWallSprite(pygame.sprite.Sprite):
         self.rect.y = y * length
 
 
+class LeftWallSprite(pygame.sprite.Sprite):
+    def __init__(self, x, y, length):
+        super().__init__(tiles_group, all_sprites, right_walls)
+        self.image = load_image('right_wall.png')
+        self.image = pygame.transform.scale(self.image, (tile_width * 1.1, tile_width * 1.5))
+        self.image = pygame.transform.rotate(self.image, -1)
+        self.image = pygame.transform.flip(self.image, 1, 0)
+        self.rect = self.image.get_rect()
+        self.rect.x = x * length
+        self.rect.y = y * length
+
+
 def load_image(name, colorkey=None):
     fullname = "data/" + name
     if not os.path.isfile(fullname):
@@ -75,6 +87,12 @@ def generate_level(level):
                 RhombusSprite(x + y, 0.5 * y - 0.5 * x, tile_width)
             elif level[y][x] == 'R':
                 RightWallSprite(x + y, 0.5 * y - 0.5 * x - 0.007 * tile_width, tile_width)
+            elif level[y][x] == 'W':
+                pass
+    for y in range(len(level) - 1, -1, -1):
+        for x in range(len(level[y]) - 1, -1, -1):
+            if level[y][x] == 'L':
+                LeftWallSprite(x + y + 0.014 * tile_width, 0.5 * y - 0.5 * x - 0.007 * tile_width, tile_width)
     return x, y, level
 
 
