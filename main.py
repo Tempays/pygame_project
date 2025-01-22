@@ -12,7 +12,9 @@ player = None
 
 tiles_group = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
-tile_width = tile_height = 50
+right_walls = pygame.sprite.Group()
+tile_width = 70
+wall_hight = 50
 
 
 class RhombusSprite(pygame.sprite.Sprite):
@@ -21,12 +23,23 @@ class RhombusSprite(pygame.sprite.Sprite):
         self.x = x * length
         self.y = y * length
         self.diagonal = (2 * length ** 2) ** 0.5
-        self.image = (load_image('stone_tile.png')).convert_alpha()
-        self.image = pygame.transform.rotate(self.image, 120)
-        self.image = pygame.transform.scale(self.image, (132, 78))
+        self.image = load_image('stone_tile.png')
+        self.image = pygame.transform.rotate(self.image, 135)
+        self.image = pygame.transform.scale(self.image, (tile_width * 2.04, tile_width * 1.04))
         self.rect = self.image.get_rect()
         self.rect.x = self.x
         self.rect.y = self.y
+
+
+class RightWallSprite(pygame.sprite.Sprite):
+    def __init__(self, x, y, length):
+        super().__init__(tiles_group, all_sprites, right_walls)
+        self.image = load_image('right_wall.png')
+        self.image = pygame.transform.scale(self.image, (tile_width * 1.1, tile_width * 1.5))
+        self.image = pygame.transform.rotate(self.image, -1)
+        self.rect = self.image.get_rect()
+        self.rect.x = x * length
+        self.rect.y = y * length
 
 
 def load_image(name, colorkey=None):
@@ -34,9 +47,15 @@ def load_image(name, colorkey=None):
     if not os.path.isfile(fullname):
         print(f"Файл с изображением '{fullname}' не найден")
         sys.exit()
-    if colorkey is None:
-        return pygame.image.load(fullname)
-    return pygame.image.load(fullname, colorkey)
+    image = pygame.image.load(fullname)
+    if colorkey is not None:
+        image = image.convert()
+        if colorkey == -1:
+            colorkey = image.get_at((0, 0))
+        image.set_colorkey(colorkey)
+    else:
+        image = image.convert_alpha()
+    return image
 
 
 def load_level(filename):
@@ -53,7 +72,9 @@ def generate_level(level):
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == '.':
-                RhombusSprite(1.5 * x + y, y - 0.5 * x, tile_width)
+                RhombusSprite(x + y, 0.5 * y - 0.5 * x, tile_width)
+            elif level[y][x] == 'R':
+                RightWallSprite(x + y, 0.5 * y - 0.5 * x - 0.007 * tile_width, tile_width)
     return x, y, level
 
 
@@ -80,6 +101,7 @@ def play_cycle():
 
         screen.fill('black')
         all_sprites.draw(screen)
+        right_walls.draw(screen)
         pygame.display.flip()
 
 
