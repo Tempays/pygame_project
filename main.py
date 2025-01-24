@@ -14,6 +14,7 @@ tiles_group = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
 right_walls = pygame.sprite.Group()
 special = pygame.sprite.Group()
+player_group = pygame.sprite.Group()
 tile_width = 70
 wall_hight = 50
 
@@ -35,24 +36,44 @@ class RhombusSprite(pygame.sprite.Sprite):
 class RightWallSprite(pygame.sprite.Sprite):
     def __init__(self, x, y, length):
         super().__init__(tiles_group, all_sprites, right_walls)
-        self.image = load_image('right_wall.png')
-        self.image = pygame.transform.scale(self.image, (tile_width * 1.1, tile_width * 1.5))
-        self.image = pygame.transform.rotate(self.image, -1)
+        self.image = load_image('isometric_0055.png')
+        self.image = pygame.transform.scale(self.image, (tile_width * 2.4, tile_width * 2))
+        self.image = pygame.transform.rotate(self.image, 0)
         self.rect = self.image.get_rect()
         self.rect.x = x * length
         self.rect.y = y * length
 
 
-class LeftWallSprite(pygame.sprite.Sprite):
+class Player(pygame.sprite.Sprite):
+
     def __init__(self, x, y, length):
-        super().__init__(tiles_group, all_sprites, right_walls)
-        self.image = load_image('right_wall.png')
-        self.image = pygame.transform.scale(self.image, (tile_width * 1.1, tile_width * 1.5))
-        self.image = pygame.transform.rotate(self.image, -1)
+        super().__init__(all_sprites, player_group)
+        self.x_init = x
+        self.y_init = y
+        self.x = x + y
+        self.y = 0.5 * y - 0.5 * x - tile_width * 0.02
+        self.length = length
+        self.image = load_image('Protect.png')
+        self.image = pygame.transform.scale(self.image, (tile_width * 3.5, tile_width * 3.5))
         self.image = pygame.transform.flip(self.image, 1, 0)
+        self.image = pygame.transform.rotate(self.image, -20)
         self.rect = self.image.get_rect()
-        self.rect.x = x * length
-        self.rect.y = y * length
+        self.rect.x = self.x * length
+        self.rect.y = self.y * length
+
+    def ok_pos(self):
+        if 0 > self.x_init > 1:
+            pass
+
+    def move(self, x, y):
+        self.x_init += x
+        self.y_init += y
+
+    def update(self):
+        self.x = self.x_init + self.y_init - 1.5
+        self.y = 0.5 * self.y_init - 0.5 * self.x_init - 3.5
+        self.rect.x = self.x * self.length
+        self.rect.y = self.y * self.length
 
 
 def load_image(name, colorkey=None):
@@ -80,34 +101,26 @@ def load_level(filename):
     return level_map
 
 
-def set_right_wall(x, y):
-    return RightWallSprite(x + y, 0.5 * y - 0.5 * x - 0.007 * tile_width, tile_width)
-
-
-def set_left_wall(x, y):
-    return LeftWallSprite(x + y + 0.014 * tile_width, 0.5 * y - 0.5 * x - 0.007 * tile_width, tile_width)
+def set_wall(x, y):
+    RightWallSprite(x + y - 0.001 * tile_width, 0.5 * y - 0.5 * x - 0.013 * tile_width, tile_width)
+    RightWallSprite(x + y - 0.001 * tile_width, 0.5 * y - 0.5 * x - 0.027 * tile_width, tile_width)
 
 
 def generate_level(level):
-    new_player, x, y = None, None, None
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == '.':
                 RhombusSprite(x + y, 0.5 * y - 0.5 * x, tile_width)
             elif level[y][x] == 'R':
-                set_right_wall(x, y)
+                set_wall(x, y)
+            elif level[y][x] == 'P':
+                RhombusSprite(x + y, 0.5 * y - 0.5 * x, tile_width)
+                player = Player(x, y, tile_width)
     for y in range(len(level) - 1, -1, -1):
         for x in range(len(level[y]) - 1, -1, -1):
             if level[y][x] == 'L':
-                set_left_wall(x, y)
-            elif level[y][x] == 'W':
-                set_right_wall(x, y)
-                set_left_wall(x, y)
-            elif level[y][x] == 'M':
-                wall = set_right_wall(x, y)
-                special.add(wall)
-                set_left_wall(x, y - 1)
-    return x, y, level
+                set_wall(x, y)
+    return player
 
 
 def terminate():
@@ -125,16 +138,27 @@ def play_cycle():
         terminate()
 
     pygame.display.flip()
-    generate_level(level)
+    player = generate_level(level)
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_DOWN:
+                    player.move(0, 1)
+                elif event.key == pygame.K_UP:
+                    player.move(0, -1)
+                elif event.key == pygame.K_LEFT:
+                    player.move(-1, 0)
+                elif event.key == pygame.K_RIGHT:
+                    player.move(1, 0)
 
         screen.fill('black')
         all_sprites.draw(screen)
         right_walls.draw(screen)
         special.draw(screen)
+        player.update()
+        player_group.draw(screen)
         pygame.display.flip()
 
 
