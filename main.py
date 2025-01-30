@@ -118,18 +118,43 @@ class Player(pygame.sprite.Sprite):
         self.x = x + y
         self.y = 0.5 * y - 0.5 * x - tile_width * 0.02
         self.length = length
-        self.image = load_image('Protect.png')
+        self.image = load_image('knight_sprites/idle.png')
         self.image = pygame.transform.scale(self.image, (tile_width * 3.5, tile_width * 3.5))
         self.image = pygame.transform.flip(self.image, 1, 0)
         self.image = pygame.transform.rotate(self.image, -22)
         self.rect = self.image.get_rect()
         self.rect.x = self.x * length
         self.rect.y = self.y * length
+        self.animation_init()
+        self.direction = 'forward'
+        self.look_direction = 'forward'
+        self.anim_number = 0
 
 
-    def ok_pos(self):
-        if 0 > self.x_init > 1:
-            pass
+    def animation_init(self):
+        self.moving = False
+        self.stop_anim = self.animation_list('knight_sprites/Idle.png', 4, 1)
+        self.walking_anim = self.animation_list('knight_sprites/Walk.png', 8, 1)
+        self.def_anim = self.animation_list('knight_sprites/Defend.png', 5, 1)
+        self.death_anim = self.animation_list('knight_sprites/Dead.png', 6, 1)
+        self.hurt_anim = self.animation_list('knight_sprites/Hurt.png', 2, 1)
+        self.attack_anim = self.animation_list('knight_sprites/Attack 2.png', 4, 1)
+        self.new_list = []
+        for i in range(len(self.stop_anim)):
+            self.new_list += [self.stop_anim[i]] + [self.stop_anim[i]] + [self.stop_anim[i]]
+        self.stop_anim = self.new_list[:]
+
+    def animation_list(self, image, columns, rows):
+        image = load_image(image)
+        frames = []
+        rect = pygame.Rect(0, 0, image.get_width() // columns, image.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (rect.w * i, rect.h * j)
+                frames.append(pygame.transform.scale(pygame.transform.rotate(
+                    image.subsurface(pygame.Rect(frame_location, rect.size)), 0),
+                    (3.5 * self.length, 3.5 * self.length)))
+        return frames
 
     def move(self, x, y):
         self.x_init += x
@@ -140,6 +165,21 @@ class Player(pygame.sprite.Sprite):
         self.y = 0.5 * self.y_init - 0.5 * self.x_init - 3.5
         self.rect.x = self.x * self.length
         self.rect.y = self.y * self.length
+
+        if self.moving:
+            self.anim_number = self.anim_number % len(self.walking_anim)
+            self.image = self.walking_anim[self.anim_number]
+            if self.look_direction == 'forward':
+                self.image = pygame.transform.flip(pygame.transform.rotate(self.image, 15), 1, 0)
+                self.rect.y -= self.length * 0.9
+                self.rect.x -= self.length * 2
+        if not self.moving:
+            self.anim_number = self.anim_number % len(self.stop_anim)
+            self.image = self.stop_anim[self.anim_number]
+            if self.look_direction == 'forward':
+                self.image = pygame.transform.flip(pygame.transform.rotate(self.image, 10), 1, 0)
+                self.rect.y -= self.length * 0.8
+                self.rect.x -= self.length * 2
 
 
 def load_image(name, colorkey=None):
@@ -203,6 +243,8 @@ def terminate():
 
 def play_cycle():
     torch_count = 0
+    door_count = 0
+    player_count = 0
     clock.tick(FPS)
     screen.fill('black')
     level = load_level('map.txt')
@@ -212,21 +254,59 @@ def play_cycle():
 
     player = generate_level(level)
     door_intersection = False
+    down_hold = up_hold = right_hold = left_hold = False
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_DOWN:
-                    player.move(0, 1)
-                elif event.key == pygame.K_UP:
-                    player.move(0, -1)
-                elif event.key == pygame.K_LEFT:
-                    player.move(-1, 0)
-                elif event.key == pygame.K_RIGHT:
-                    player.move(1, 0)
-                    door_intersection = True
-
+            if not player.moving:
+                if event.type == pygame.KEYDOWN:
+                    match event.key:
+                        case pygame.K_DOWN:
+                            player.direction = 'back'
+                            player.look_direction = 'back'
+                            down_hold = True
+                            player.moving = True
+                            player.anim_number = 0
+                        case pygame.K_UP:
+                            player.direction = 'forward'
+                            player.look_direction = 'forward'
+                            up_hold = True
+                            player.moving = True
+                            player.anim_number = 0
+                        case pygame.K_LEFT:
+                            player.direction = 'left'
+                            left_hold = True
+                            player.moving = True
+                            player.anim_number = 0
+                        case pygame.K_RIGHT:
+                            player.direction = 'right'
+                            right_hold = True
+                            player.moving = True
+                            player.anim_number = 0
+            else:
+                if event.type == pygame.KEYUP:
+                    match event.key:
+                        case pygame.K_DOWN:
+                            if down_hold:
+                                player.moving = False
+                                down_hold = False
+                                player.anim_number = 0
+                        case pygame.K_UP:
+                            if up_hold:
+                                player.moving = False
+                                up_hold = False
+                                player.anim_number = 0
+                        case pygame.K_LEFT:
+                            if left_hold:
+                                player.moving = False
+                                left_hold = False
+                                player.anim_number = 0
+                        case pygame.K_RIGHT:
+                            if right_hold:
+                                player.moving = False
+                                right_hold = False
+                                player.anim_number = 0
 
         if door_intersection:
             for sprite in all_sprites:
@@ -235,21 +315,36 @@ def play_cycle():
             player = generate_level(level)
             door_intersection = False
 
+        if player.moving:
+            match player.direction:
+                case 'forward':
+                    player.y_init -= 0.01
+                case 'back':
+                    player.y_init += 0.01
+                case 'left':
+                    player.x_init -= 0.01
+                case 'right':
+                    player.x_init += 0.01
 
         torch_count = (torch_count + 1) % (FPS / 2)
+        door_count = (door_count + 1) % (FPS / 4)
+        player_count = (player_count + 1) % (FPS / 4)
         if not torch_count:
             torch_group.update()
+        if not door_count:
             doors_group.update()
-
-
+        if not player_count:
+            player.anim_number += 1
 
         screen.fill('black')
+
         all_sprites.draw(screen)
         right_walls.draw(screen)
         player.update()
         torch_group.draw(screen)
         player_group.draw(screen)
         special.draw(screen)
+
         pygame.display.flip()
 
 
