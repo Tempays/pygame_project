@@ -36,6 +36,7 @@ class RhombusSprite(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = self.x
         self.rect.y = self.y
+        self.mask = pygame.mask.from_surface(self.image)
 
 
 class RightWallSprite(pygame.sprite.Sprite):
@@ -46,17 +47,7 @@ class RightWallSprite(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = x * length
         self.rect.y = y * length
-
-
-class Door(pygame.sprite.Sprite):
-    def __init__(self, x, y, length):
-        super().__init__(tiles_group, all_sprites, right_walls)
-        self.image = load_image('door.png', -1)
-        self.image = pygame.transform.rotate(self.image, 20)
-        self.image = pygame.transform.scale(self.image, (tile_width * 2.4, tile_width * 3.4))
-        self.rect = self.image.get_rect()
-        self.rect.x = x * length
-        self.rect.y = y * length
+        self.mask = pygame.mask.from_surface(self.image)
 
 
 class AnimatedSprite(pygame.sprite.Sprite):
@@ -112,24 +103,29 @@ class TorchSprite(AnimatedSprite):
 class Player(pygame.sprite.Sprite):
 
     def __init__(self, x, y, length):
-        super().__init__(all_sprites, player_group)
+        super().__init__(all_sprites)
         self.x_init = x
         self.y_init = y
         self.x = x + y
         self.y = 0.5 * y - 0.5 * x - tile_width * 0.02
         self.length = length
+
         self.image = load_image('knight_sprites/idle.png')
         self.image = pygame.transform.scale(self.image, (tile_width * 3.5, tile_width * 3.5))
         self.image = pygame.transform.flip(self.image, 1, 0)
-        self.image = pygame.transform.rotate(self.image, -22)
+        self.image = pygame.transform.rotate(self.image, 0)
+
         self.rect = self.image.get_rect()
         self.rect.x = self.x * length
         self.rect.y = self.y * length
+
         self.animation_init()
+
         self.direction = 'forward'
         self.look_direction = 'forward'
-        self.anim_number = 0
 
+        self.anim_number = 0
+        self.shadow = None
 
     def animation_init(self):
         self.moving = False
@@ -156,30 +152,48 @@ class Player(pygame.sprite.Sprite):
                     (3.5 * self.length, 3.5 * self.length)))
         return frames
 
-    def move(self, x, y):
-        self.x_init += x
-        self.y_init += y
-
     def update(self):
-        self.x = self.x_init + self.y_init - 1.5
-        self.y = 0.5 * self.y_init - 0.5 * self.x_init - 3.5
-        self.rect.x = self.x * self.length
-        self.rect.y = self.y * self.length
+        self.x = self.x_init + self.y_init + 0.25
+        self.y = 0.5 * self.y_init - 0.5 * self.x_init - 2.5
 
         if self.moving:
             self.anim_number = self.anim_number % len(self.walking_anim)
             self.image = self.walking_anim[self.anim_number]
             if self.look_direction == 'forward':
-                self.image = pygame.transform.flip(pygame.transform.rotate(self.image, 15), 1, 0)
-                self.rect.y -= self.length * 0.9
-                self.rect.x -= self.length * 2
+                self.image = pygame.transform.flip(self.image, 1, 0)
+                self.x -= 1.5
         if not self.moving:
             self.anim_number = self.anim_number % len(self.stop_anim)
             self.image = self.stop_anim[self.anim_number]
             if self.look_direction == 'forward':
-                self.image = pygame.transform.flip(pygame.transform.rotate(self.image, 10), 1, 0)
-                self.rect.y -= self.length * 0.8
-                self.rect.x -= self.length * 2
+                self.image = pygame.transform.flip(self.image, 1, 0)
+                self.x -= 1.5
+
+        self.rect.x = self.x * self.length
+        self.rect.y = self.y * self.length
+
+
+class Shadow(pygame.sprite.Sprite):
+    def __init__(self, owner):
+        self.owner = owner
+        super().__init__(all_sprites, player_group)
+        self.image = pygame.transform.scale(load_image('shadow.png', -1), (tile_width, tile_width))
+        self.rect = self.image.get_rect()
+        self.image.set_alpha(160)
+        self.mask = pygame.mask.from_surface(self.image)
+        self.x_init, self.y_init = self.owner.x_init, self.owner.y_init
+
+    def update(self):
+        self.x = self.x_init + self.y_init
+        self.y = 0.5 * self.y_init - 0.5 * self.x_init
+        if self.owner.look_direction == 'forward':
+            self.x = self.x + 0.9
+            self.y = self.y + 0.45
+        else:
+            self.x = self.x + 0.6
+            self.y = self.y + 0.5
+        self.rect.y = self.y * tile_width
+        self.rect.x = self.x * tile_width
 
 
 def load_image(name, colorkey=None):
@@ -222,6 +236,9 @@ def generate_level(level):
             elif level[y][x] == 'P':
                 RhombusSprite(x + y, 0.5 * y - 0.5 * x, tile_width)
                 player = Player(x, y, tile_width)
+                player.shadow = Shadow(player)
+                player_group.add(player.shadow)
+                player_group.add(player)
             elif level[y][x] == 'T':
                 set_wall(x, y)
                 TorchSprite('torch.png', x, y, tile_width)
@@ -319,12 +336,16 @@ def play_cycle():
             match player.direction:
                 case 'forward':
                     player.y_init -= 0.01
+                    player.shadow.y_init -= 0.01
                 case 'back':
                     player.y_init += 0.01
+                    player.shadow.y_init += 0.01
                 case 'left':
                     player.x_init -= 0.01
+                    player.shadow.x_init -= 0.01
                 case 'right':
                     player.x_init += 0.01
+                    player.shadow.x_init += 0.01
 
         torch_count = (torch_count + 1) % (FPS / 2)
         door_count = (door_count + 1) % (FPS / 4)
@@ -340,11 +361,10 @@ def play_cycle():
 
         all_sprites.draw(screen)
         right_walls.draw(screen)
-        player.update()
+        player_group.update()
         torch_group.draw(screen)
         player_group.draw(screen)
         special.draw(screen)
-
         pygame.display.flip()
 
 
