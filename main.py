@@ -84,6 +84,7 @@ class DoorSprite(AnimatedSprite):
             self.frames[i] = pygame.transform.rotate(self.frames[i], -4)
         self.rect.x = x * length
         self.rect.y = y * length
+        self.number = None
         right_walls.add(self)
         doors_group.add(self)
 
@@ -232,10 +233,9 @@ def generate_level(level):
             elif level[y][x] == 'R':
                 set_wall(x - 6, y + 3)
             elif level[y][x] == 'r':
-                walls = set_wall(x - 6, y + 3)
-                walls[0].image.set_alpha(0)
-                walls[1].image.set_alpha(0)
-                floor.add((walls[1]))
+                floor_piece = RhombusSprite(x + y - 3, 0.5 * (y + 3) - 0.5 * (x - 6), tile_width)
+                floor_piece.image.set_alpha(0)
+                right_walls.add(floor_piece)
             elif level[y][x] == 'P':
                 RhombusSprite(x - 3 + y, 0.5 * (y + 3) - 0.5 * (x - 6), tile_width)
                 player = Player(x - 6, y + 3, tile_width)
@@ -249,14 +249,9 @@ def generate_level(level):
         for x in range(len(level[y]) - 1, -1, -1):
             if level[y][x] == 'L':
                 set_wall(x - 6, y + 3)
-
-            elif level[y][x] == 'l':
-                walls = set_wall(x - 6, y + 3)
-                floor.add(walls[1])
-                walls[0].image.set_alpha(0)
-                walls[1].image.set_alpha(0)
             elif level[y][x].isdigit():
-                DoorSprite(x - 3 + y - 0.4 + 0.5, 0.5 * (y + 2.6) - 0.5 * (x - 6) - 1.8, tile_width)
+                door = DoorSprite(x - 3 + y - 0.4 + 0.5, 0.5 * (y + 2.6) - 0.5 * (x - 6) - 1.8, tile_width)
+                door.number = level[y][x]
     return player
 
 
@@ -300,11 +295,13 @@ def play_cycle():
                             player.anim_number = 0
                         case pygame.K_LEFT:
                             player.direction = 'left'
+                            player.look_direction = 'forward'
                             left_hold = True
                             player.moving = True
                             player.anim_number = 0
                         case pygame.K_RIGHT:
                             player.direction = 'right'
+                            player.look_direction = 'back'
                             right_hold = True
                             player.moving = True
                             player.anim_number = 0
@@ -334,8 +331,13 @@ def play_cycle():
 
         if door_intersection:
             for sprite in all_sprites:
+                if isinstance(sprite, DoorSprite):
+                    number = sprite.number
                 sprite.kill()
-            level = load_level('map_2.txt')
+            if number == '1':
+                level = load_level('map_2.txt')
+            elif number == '2':
+                level = load_level('map_3.txt')
             player = generate_level(level)
             door_intersection = False
 

@@ -1,14 +1,12 @@
 
-#  L1LR
-r##...R
-r##...R
-r##...T
-r##...R
-r##...T
-r##...R
-r##...T
-r##.P.R
-r##...R
-r  ###
-r  ###
-   llll
+#rL1LR
+#r...R
+#r...R
+#r...T
+#r...R
+#r...T
+#r...R
+#r...T
+#r.P.R
+#r...R
+#rrrrr
