@@ -157,7 +157,7 @@ class Player(pygame.sprite.Sprite):
         return frames
 
     def update(self):
-        self.x = self.x_init + self.y_init + 0.25
+        self.x = self.x_init + self.y_init + 0.5
         self.y = 0.5 * self.y_init - 0.5 * self.x_init - 2.5
 
         if self.moving:
@@ -165,13 +165,13 @@ class Player(pygame.sprite.Sprite):
             self.image = self.walking_anim[self.anim_number]
             if self.look_direction == 'forward':
                 self.image = pygame.transform.flip(self.image, 1, 0)
-                self.x -= 1.5
+                self.x -= 1.7
         if not self.moving:
             self.anim_number = self.anim_number % len(self.stop_anim)
             self.image = self.stop_anim[self.anim_number]
             if self.look_direction == 'forward':
                 self.image = pygame.transform.flip(self.image, 1, 0)
-                self.x -= 1.5
+                self.x -= 1.7
 
         self.rect.x = self.x * self.length
         self.rect.y = self.y * self.length
@@ -188,14 +188,8 @@ class Shadow(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
 
     def update(self):
-        self.x = self.x_init + self.y_init
-        self.y = 0.5 * self.y_init - 0.5 * self.x_init
-        if self.owner.look_direction == 'forward':
-            self.x = self.x + 0.9
-            self.y = self.y + 0.45
-        else:
-            self.x = self.x + 0.6
-            self.y = self.y + 0.5
+        self.x = self.x_init + self.y_init + 0.9
+        self.y = 0.5 * self.y_init - 0.5 * self.x_init + 0.45
         self.rect.y = self.y * tile_width
         self.rect.x = self.x * tile_width
 
@@ -234,35 +228,35 @@ def generate_level(level):
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == '.':
-                RhombusSprite(x + y - 3, 0.5 * y - 0.5 * (x - 3), tile_width)
+                RhombusSprite(x + y - 3, 0.5 * (y + 3) - 0.5 * (x - 6), tile_width)
             elif level[y][x] == 'R':
-                set_wall(x - 3, y)
+                set_wall(x - 6, y + 3)
             elif level[y][x] == 'r':
-                walls = set_wall(x - 3, y)
+                walls = set_wall(x - 6, y + 3)
                 walls[0].image.set_alpha(0)
                 walls[1].image.set_alpha(0)
                 floor.add((walls[1]))
             elif level[y][x] == 'P':
-                RhombusSprite(x - 3 + y, 0.5 * y - 0.5 * (x - 3), tile_width)
-                player = Player(x - 3, y, tile_width)
+                RhombusSprite(x - 3 + y, 0.5 * (y + 3) - 0.5 * (x - 6), tile_width)
+                player = Player(x - 6, y + 3, tile_width)
                 player.shadow = Shadow(player)
                 player_group.add(player.shadow)
                 player_group.add(player)
             elif level[y][x] == 'T':
-                set_wall(x - 3, y)
-                TorchSprite('torch.png', x - 3, y, tile_width)
+                set_wall(x - 6, y + 3)
+                TorchSprite('torch.png', x - 6, y + 3, tile_width)
     for y in range(len(level) - 1, -1, -1):
         for x in range(len(level[y]) - 1, -1, -1):
             if level[y][x] == 'L':
-                set_wall(x - 3, y)
+                set_wall(x - 6, y + 3)
 
             elif level[y][x] == 'l':
-                walls = set_wall(x - 3, y)
+                walls = set_wall(x - 6, y + 3)
                 floor.add(walls[1])
                 walls[0].image.set_alpha(0)
                 walls[1].image.set_alpha(0)
             elif level[y][x].isdigit():
-                DoorSprite(x - 3 + y - 0.4 + 0.5, 0.5 * (y - 0.4) - 0.5 * (x - 3) - 1.8, tile_width)
+                DoorSprite(x - 3 + y - 0.4 + 0.5, 0.5 * (y + 2.6) - 0.5 * (x - 6) - 1.8, tile_width)
     return player
 
 
@@ -364,16 +358,20 @@ def play_cycle():
                     player.x_init += 0.01
                     player.shadow.x_init += 0.01
                     move = (0.01, 0)
+
+            for sprite in doors_group:
+                if pygame.sprite.collide_mask(player.shadow, sprite):
+                    door_intersection = True
+
             for sprite in right_walls:
                 if pygame.sprite.collide_mask(player.shadow, sprite):
-                    player.x_init -= 20 * move[0]
-                    player.y_init -= 20 * move[1]
-                    player.shadow.x_init -= 20 * move[0]
-                    player.shadow.y_init -= 20 * move[1]
+                    player.x_init -= 10 * move[0]
+                    player.y_init -= 10 * move[1]
+                    player.shadow.x_init -= 10 * move[0]
+                    player.shadow.y_init -= 10 * move[1]
                     move = (0, 0)
                     player.moving = False
                     break
-
 
         torch_count = (torch_count + 1) % (FPS / 2)
         door_count = (door_count + 1) % (FPS / 4)
@@ -388,11 +386,10 @@ def play_cycle():
         screen.fill('black')
 
         all_sprites.draw(screen)
-        right_walls.draw(screen)
+        # right_walls.draw(screen)
         player_group.update()
         torch_group.draw(screen)
         player_group.draw(screen)
-        special.draw(screen)
         pygame.display.flip()
 
 
