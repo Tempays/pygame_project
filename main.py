@@ -131,6 +131,7 @@ class Player(pygame.sprite.Sprite):
         self.anim_number = 0
         self.shadow = None
         self.mask = pygame.mask.from_surface(self.image)
+        self.attack = False
 
     def animation_init(self):
         self.moving = False
@@ -173,6 +174,16 @@ class Player(pygame.sprite.Sprite):
             if self.look_direction == 'forward':
                 self.image = pygame.transform.flip(self.image, 1, 0)
                 self.x -= 1.7
+        if self.attack:
+            if self.anim_number == len(self.attack_anim):
+                self.anim_number -= 1
+                self.attack = False
+                pass
+            self.image = self.attack_anim[self.anim_number]
+            if self.look_direction == 'forward':
+                self.image = pygame.transform.flip(self.image, 1, 0)
+                # self.x += 1
+
 
         self.rect.x = self.x * self.length
         self.rect.y = self.y * self.length
@@ -280,31 +291,39 @@ def play_cycle():
                 terminate()
             if not player.moving:
                 if event.type == pygame.KEYDOWN:
-                    match event.key:
-                        case pygame.K_DOWN:
-                            player.direction = 'back'
-                            player.look_direction = 'back'
-                            down_hold = True
-                            player.moving = True
+                    if not player.attack:
+                        match event.key:
+                            case pygame.K_DOWN:
+                                player.direction = 'back'
+                                player.look_direction = 'back'
+                                down_hold = True
+                                player.moving = True
+                                player.anim_number = 0
+                            case pygame.K_UP:
+                                player.direction = 'forward'
+                                player.look_direction = 'forward'
+                                up_hold = True
+                                player.moving = True
+                                player.anim_number = 0
+                            case pygame.K_LEFT:
+                                player.direction = 'left'
+                                player.look_direction = 'forward'
+                                left_hold = True
+                                player.moving = True
+                                player.anim_number = 0
+                            case pygame.K_RIGHT:
+                                player.direction = 'right'
+                                player.look_direction = 'back'
+                                right_hold = True
+                                player.moving = True
+                                player.anim_number = 0
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    match event.button:
+                        case 1:
                             player.anim_number = 0
-                        case pygame.K_UP:
-                            player.direction = 'forward'
-                            player.look_direction = 'forward'
-                            up_hold = True
-                            player.moving = True
-                            player.anim_number = 0
-                        case pygame.K_LEFT:
-                            player.direction = 'left'
-                            player.look_direction = 'forward'
-                            left_hold = True
-                            player.moving = True
-                            player.anim_number = 0
-                        case pygame.K_RIGHT:
-                            player.direction = 'right'
-                            player.look_direction = 'back'
-                            right_hold = True
-                            player.moving = True
-                            player.anim_number = 0
+                            player.attack = True
+                        case 3:
+                            print('пкм')
             else:
                 if event.type == pygame.KEYUP:
                     match event.key:
