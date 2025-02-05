@@ -43,7 +43,7 @@ class RhombusSprite(pygame.sprite.Sprite):
 
 class RightWallSprite(pygame.sprite.Sprite):
     def __init__(self, x, y, length):
-        super().__init__(tiles_group, all_sprites, right_walls)
+        super().__init__(tiles_group, all_sprites)
         self.image = load_image('isometric_0055.png')
         self.image = pygame.transform.scale(self.image, (tile_width * 2.4, tile_width * 2))
         self.rect = self.image.get_rect()
@@ -133,6 +133,8 @@ class Player(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
         self.attack = False
 
+        self.hp = 3
+
     def animation_init(self):
         self.moving = False
         self.stop_anim = self.animation_list('knight_sprites/Idle.png', 4, 1)
@@ -206,6 +208,10 @@ class Shadow(pygame.sprite.Sprite):
         self.rect.x = self.x * tile_width
 
 
+class Fiend(pygame.sprite.Sprite):
+    pass
+
+
 def load_image(name, colorkey=None):
     fullname = "data/" + name
     if not os.path.isfile(fullname):
@@ -243,6 +249,9 @@ def generate_level(level):
                 RhombusSprite(x + y - 3, 0.5 * (y + 3) - 0.5 * (x - 6), tile_width)
             elif level[y][x] == 'R':
                 set_wall(x - 6, y + 3)
+                floor_piece = RhombusSprite(x + y - 3, 0.5 * (y + 3) - 0.5 * (x - 6), tile_width)
+                floor_piece.image.set_alpha(0)
+                right_walls.add(floor_piece)
             elif level[y][x] == 'r':
                 floor_piece = RhombusSprite(x + y - 3, 0.5 * (y + 3) - 0.5 * (x - 6), tile_width)
                 floor_piece.image.set_alpha(0)
@@ -260,6 +269,9 @@ def generate_level(level):
         for x in range(len(level[y]) - 1, -1, -1):
             if level[y][x] == 'L':
                 set_wall(x - 6, y + 3)
+                floor_piece = RhombusSprite(x + y - 3, 0.5 * (y + 3) - 0.5 * (x - 6), tile_width)
+                floor_piece.image.set_alpha(0)
+                right_walls.add(floor_piece)
             elif level[y][x].isdigit():
                 door = DoorSprite(x - 3 + y - 0.4 + 0.5, 0.5 * (y + 2.6) - 0.5 * (x - 6) - 1.8, tile_width)
                 door.number = level[y][x]
@@ -320,8 +332,9 @@ def play_cycle():
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     match event.button:
                         case 1:
-                            player.anim_number = 0
-                            player.attack = True
+                            if not player.attack:
+                                player.anim_number = 0
+                                player.attack = True
                         case 3:
                             print('пкм')
             else:
