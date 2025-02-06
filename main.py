@@ -1,5 +1,6 @@
 import os
 import sys
+import math
 
 import pygame
 
@@ -19,6 +20,7 @@ player_group = pygame.sprite.Group()
 doors_group = pygame.sprite.Group()
 torch_group = pygame.sprite.Group()
 floor = pygame.sprite.Group()
+fiends = pygame.sprite.Group()
 tile_width = 70
 wall_hight = 50
 
@@ -104,9 +106,8 @@ class TorchSprite(AnimatedSprite):
         torch_group.add(self)
 
 
-class Player(pygame.sprite.Sprite):
-
-    def __init__(self, x, y, length):
+class Character(pygame.sprite.Sprite):
+    def __init__(self, x, y, length, image_path, animation_paths):
         super().__init__(all_sprites)
         self.x_init = x
         self.y_init = y
@@ -114,16 +115,13 @@ class Player(pygame.sprite.Sprite):
         self.y = 0.5 * y - 0.5 * x - tile_width * 0.02
         self.length = length
 
-        self.image = load_image('knight_sprites/idle.png')
-        self.image = pygame.transform.scale(self.image, (tile_width * 3.5, tile_width * 3.5))
-        self.image = pygame.transform.flip(self.image, 1, 0)
-        self.image = pygame.transform.rotate(self.image, 0)
+        self.image = load_image(image_path)
 
         self.rect = self.image.get_rect()
         self.rect.x = self.x * length
         self.rect.y = self.y * length
 
-        self.animation_init()
+        self.animation_init(animation_paths)
 
         self.direction = 'forward'
         self.look_direction = 'forward'
@@ -135,14 +133,14 @@ class Player(pygame.sprite.Sprite):
 
         self.hp = 3
 
-    def animation_init(self):
+    def animation_init(self, animation_paths):
         self.moving = False
-        self.stop_anim = self.animation_list('knight_sprites/Idle.png', 4, 1)
-        self.walking_anim = self.animation_list('knight_sprites/Walk.png', 8, 1)
-        self.def_anim = self.animation_list('knight_sprites/Defend.png', 5, 1)
-        self.death_anim = self.animation_list('knight_sprites/Dead.png', 6, 1)
-        self.hurt_anim = self.animation_list('knight_sprites/Hurt.png', 2, 1)
-        self.attack_anim = self.animation_list('knight_sprites/Attack 2.png', 4, 1)
+        self.stop_anim = self.animation_list(animation_paths['idle'], 4, 1)
+        self.walking_anim = self.animation_list(animation_paths['walk'], 8, 1)
+        self.def_anim = self.animation_list(animation_paths['defend'], 5, 1)
+        self.death_anim = self.animation_list(animation_paths['death'], 6, 1)
+        self.hurt_anim = self.animation_list(animation_paths['hurt'], 2, 1)
+        self.attack_anim = self.animation_list(animation_paths['attack'], 4, 1)
         self.new_list = []
         for i in range(len(self.stop_anim)):
             self.new_list += [self.stop_anim[i]] + [self.stop_anim[i]] + [self.stop_anim[i]]
@@ -177,18 +175,99 @@ class Player(pygame.sprite.Sprite):
                 self.image = pygame.transform.flip(self.image, 1, 0)
                 self.x -= 1.7
         if self.attack:
+            stop = False
             if self.anim_number == len(self.attack_anim):
                 self.anim_number -= 1
                 self.attack = False
-                pass
-            self.image = self.attack_anim[self.anim_number]
-            if self.look_direction == 'forward':
-                self.image = pygame.transform.flip(self.image, 1, 0)
-                # self.x += 1
-
+                stop = True
+            if not stop:
+                self.image = self.attack_anim[self.anim_number]
+                if self.look_direction == 'forward':
+                    self.image = pygame.transform.flip(self.image, 1, 0)
 
         self.rect.x = self.x * self.length
         self.rect.y = self.y * self.length
+
+
+class Player(Character):
+    def __init__(self, x, y, length):
+        self.x = x + y
+        self.y = 0.5 * y - 0.5 * x - tile_width * 0.02
+
+        animation_paths = {
+            'idle': 'knight_sprites/Idle.png',
+            'walk': 'knight_sprites/Walk.png',
+            'defend': 'knight_sprites/Defend.png',
+            'death': 'knight_sprites/Dead.png',
+            'hurt': 'knight_sprites/Hurt.png',
+            'attack': 'knight_sprites/Attack 2.png'
+        }
+        super().__init__(x, y, length, 'knight_sprites/Idle.png', animation_paths)
+        self.image = pygame.transform.scale(self.image, (tile_width * 3.5, tile_width * 3.5))
+        self.image = pygame.transform.flip(self.image, 1, 0)
+        self.image = pygame.transform.rotate(self.image, 0)
+
+
+class Fiend(Character):
+    def __init__(self, x, y, length):
+        self.x = x + y
+        self.y = 0.5 * y - 0.5 * x - tile_width * 0.02
+        animation_paths = {
+            'idle': 'fiend_sprites/Idle.png',
+            'walk': 'fiend_sprites/Walk.png',
+            'defend': 'fiend_sprites/Attack.png',
+            'death': 'fiend_sprites/Dead.png',
+            'hurt': 'fiend_sprites/Hurt.png',
+            'attack': 'fiend_sprites/Attack.png'
+        }
+        super().__init__(x, y, length, 'fiend_sprites/Idle.png', animation_paths)
+        # self.image = pygame.transform.scale(self.image, (tile_width, tile_width))
+        self.image = pygame.transform.flip(self.image, 1, 0)
+        self.image = pygame.transform.rotate(self.image, 0)
+        self.speed = 0.005  # Скорость перемещения
+        self.target_x = x  # Начальные координаты цели
+        self.target_y = y
+        self.attack = False
+        self.first = True
+
+    def animation_list(self, image, columns, rows):
+        image = load_image(image)
+        frames = []
+        rect = pygame.Rect(0, 0, image.get_width() // columns, image.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (rect.w * i, rect.h * j)
+                frames.append(pygame.transform.scale(pygame.transform.rotate(
+                    image.subsurface(pygame.Rect(frame_location, rect.size)), 0),
+                    (3.5 * self.length, 3.5 * self.length)))
+        return frames
+
+    def set_target(self, player):
+        self.target_x = player.x_init
+        self.target_y = player.y_init
+
+    def update(self):
+        dx = self.target_x - self.x_init
+        dy = self.target_y - self.y_init
+
+        distance = math.hypot(dx, dy)
+
+        if distance > 1:
+            dx /= distance
+            dy /= distance
+
+            self.x_init += dx * self.speed
+            self.y_init += dy * self.speed
+            self.shadow.x_init += dx * self.speed
+            self.shadow.y_init += dy * self.speed
+            self.moving = True
+            self.look_direction = 'forward' if self.x_init > self.target_x else 'back'
+        elif 0 < distance <= 1:
+            self.moving = False
+            if not self.attack:
+                self.anim_number = 0
+                self.attack = True
+        super().update()
 
 
 class Shadow(pygame.sprite.Sprite):
@@ -206,10 +285,6 @@ class Shadow(pygame.sprite.Sprite):
         self.y = 0.5 * self.y_init - 0.5 * self.x_init + 0.45
         self.rect.y = self.y * tile_width
         self.rect.x = self.x * tile_width
-
-
-class Fiend(pygame.sprite.Sprite):
-    pass
 
 
 def load_image(name, colorkey=None):
@@ -265,6 +340,16 @@ def generate_level(level):
             elif level[y][x] == 'T':
                 set_wall(x - 6, y + 3)
                 TorchSprite('torch.png', x - 6, y + 3, tile_width)
+                floor_piece = RhombusSprite(x + y - 3, 0.5 * (y + 3) - 0.5 * (x - 6), tile_width)
+                floor_piece.image.set_alpha(0)
+                right_walls.add(floor_piece)
+            elif level[y][x] == 'F':
+                RhombusSprite(x - 3 + y, 0.5 * (y + 3) - 0.5 * (x - 6), tile_width)
+                fiend = Fiend(x - 6, y + 3, tile_width)
+                fiends.add(fiend)
+                fiend.shadow = Shadow(fiend)
+                player_group.add(fiend.shadow)
+                player_group.add(fiend)
     for y in range(len(level) - 1, -1, -1):
         for x in range(len(level[y]) - 1, -1, -1):
             if level[y][x] == 'L':
@@ -407,6 +492,11 @@ def play_cycle():
                     player.moving = False
                     break
 
+            for fiend in fiends:
+                if not fiend.attack:
+                    fiend.set_target(player)
+                # fiend.moving = True
+
         torch_count = (torch_count + 1) % (FPS / 2)
         door_count = (door_count + 1) % (FPS / 4)
         player_count = (player_count + 1) % (FPS / 4)
@@ -416,6 +506,13 @@ def play_cycle():
             doors_group.update()
         if not player_count:
             player.anim_number += 1
+            for fiend in fiends:
+                fiend.anim_number += 1
+
+
+
+        """ПЕРЕМЕННАЯ ДЛЯ ИТОГОВОГО СЧЕТА"""
+        count = 1000
 
         screen.fill('black')
 
@@ -423,6 +520,10 @@ def play_cycle():
         # right_walls.draw(screen)
         player_group.update()
         torch_group.draw(screen)
+        sprites = player_group.sprites()
+        sprites = sorted(sprites, key=lambda x: (x.y_init, x.x_init))
+        player_group.empty()
+        player_group.add(sprites)
         player_group.draw(screen)
         pygame.display.flip()
 
