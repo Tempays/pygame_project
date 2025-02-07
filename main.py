@@ -4,6 +4,10 @@ import math
 
 import pygame
 
+# счетчик попадпний
+count_to_death = 0
+total = 0
+
 FPS = 144
 clock = pygame.time.Clock()
 
@@ -26,6 +30,103 @@ wall_hight = 50
 
 doors = dict()
 doors['map.txt'] = '1', 'map_2.txt'
+
+
+def main_window():
+    button_surface = pygame.Surface((150, 50))
+    button_font = pygame.font.Font(None, 24)
+    button_text = button_font.render("Играть", True, (0, 0, 0))
+    text_coord = button_text.get_rect(center=(button_surface.get_width() / 2, button_surface.get_height() / 2))
+    button_coord = pygame.Rect((WIDTH - 150) // 2, (HEIGHT - 50) // 2 - 75, 150, 50)
+    button_surface2 = pygame.Surface((150, 50))
+    button_coord2 = pygame.Rect((WIDTH - 150) // 2, (HEIGHT - 50) // 2, 150, 50)
+    button_text2 = button_font.render("Выход", True, (0, 0, 0))
+    text_coord2 = button_text.get_rect(center=(button_surface2.get_width() / 2, button_surface2.get_height() / 2))
+
+    if __name__ == '__main__':
+        pygame.init()
+        pygame.display.set_caption('Игра')
+        screen = pygame.display.set_mode(size)
+        screen.fill((155, 255, 155))
+        fps = 144
+        running = True
+        background = load_image("Battleground3_3.png")
+
+        while running:
+            screen.fill('black')
+            screen.fill((155, 255, 155))
+            screen.blit(background, ((WIDTH - background.get_rect()[2]) // 2, (HEIGHT - background.get_rect()[3]) // 2))
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    if button_coord.collidepoint(event.pos):
+                        print("play")
+                        for sprite in all_sprites:
+                            sprite.kill()
+                        play_cycle()
+                    if button_coord2.collidepoint(event.pos):
+                        running = False
+                        pygame.quit()
+            if button_coord.collidepoint(pygame.mouse.get_pos()):
+                pygame.draw.rect(button_surface, (255, 215, 0), (0, 0, 148, 48))
+            else:
+                pygame.draw.rect(button_surface, (0, 0, 0), (0, 0, 150, 50))
+                pygame.draw.rect(button_surface, (255, 255, 255), (0, 0, 148, 48))
+            button_surface.blit(button_text, text_coord)
+            screen.blit(button_surface, (button_coord.x, button_coord.y))
+            if button_coord2.collidepoint(pygame.mouse.get_pos()):
+                pygame.draw.rect(button_surface2, (255, 215, 0), (0, 0, 148, 48))
+            else:
+                pygame.draw.rect(button_surface2, (0, 0, 0), (0, 0, 150, 50))
+                pygame.draw.rect(button_surface2, (255, 255, 255), (0, 0, 148, 48))
+            button_surface2.blit(button_text2, text_coord2)
+            screen.blit(button_surface2, (button_coord2.x, button_coord2.y))
+            pygame.display.flip()
+
+
+def final_window():
+    global total
+    button_surface = pygame.Surface((150, 50))
+    button_font = pygame.font.Font(None, 24)
+    total_str = "Счет: " + str(total)
+    button_text = button_font.render(total_str, True, (0, 0, 0))
+    text_coord = button_text.get_rect(center=(button_surface.get_width() / 2, button_surface.get_height() / 2))
+    button_coord = pygame.Rect(240, 150, 150, 50)
+    button_surface2 = pygame.Surface((150, 50))
+    button_coord2 = pygame.Rect(240, 220, 150, 50)
+    button_text2 = button_font.render("В меню", True, (0, 0, 0))
+    text_coord2 = button_text.get_rect(center=(button_surface2.get_width() / 2, button_surface2.get_height() / 2))
+
+    if __name__ == '__main__':
+        pygame.init()
+        pygame.display.set_caption('Игра')
+        screen = pygame.display.set_mode(size)
+        screen.fill("#fafad2")
+        fps = 144
+        running = True
+        background = load_image("Battleground4_2.png")
+
+        while running:
+            screen.blit(background, (0, 0))
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    if button_coord2.collidepoint(event.pos):
+                        running = False
+                        main_window()
+            pygame.draw.rect(button_surface, (255, 255, 255), (0, 0, 150, 50))
+            button_surface.blit(button_text, text_coord)
+            screen.blit(button_surface, (button_coord.x, button_coord.y))
+            if button_coord2.collidepoint(pygame.mouse.get_pos()):
+                pygame.draw.rect(button_surface2, (255, 215, 0), (0, 0, 148, 48))
+            else:
+                pygame.draw.rect(button_surface2, (0, 0, 0), (0, 0, 150, 50))
+                pygame.draw.rect(button_surface2, (255, 255, 255), (0, 0, 148, 48))
+            button_surface2.blit(button_text2, text_coord2)
+            screen.blit(button_surface2, (button_coord2.x, button_coord2.y))
+            pygame.display.flip()
 
 
 class RhombusSprite(pygame.sprite.Sprite):
@@ -128,7 +229,7 @@ class Character(pygame.sprite.Sprite):
 
         self.anim_number = 0
         self.shadow = None
-        self.mask = pygame.mask.from_surface(self.image)
+        # self.mask = pygame.mask.from_surface(self.image)
         self.attack = False
 
         self.hp = 3
@@ -187,12 +288,17 @@ class Character(pygame.sprite.Sprite):
 
         self.rect.x = self.x * self.length
         self.rect.y = self.y * self.length
+        self.mask = pygame.mask.from_surface(self.image)
 
 
 class Player(Character):
     def __init__(self, x, y, length):
         self.x = x + y
         self.y = 0.5 * y - 0.5 * x - tile_width * 0.02
+        global x_p
+        x_p = self.x
+        global y_p
+        y_p = self.y
 
         animation_paths = {
             'idle': 'knight_sprites/Idle.png',
@@ -206,6 +312,8 @@ class Player(Character):
         self.image = pygame.transform.scale(self.image, (tile_width * 3.5, tile_width * 3.5))
         self.image = pygame.transform.flip(self.image, 1, 0)
         self.image = pygame.transform.rotate(self.image, 0)
+
+        self.attack_stop = False
 
 
 class Fiend(Character):
@@ -225,7 +333,7 @@ class Fiend(Character):
         self.image = pygame.transform.flip(self.image, 1, 0)
         self.image = pygame.transform.rotate(self.image, 0)
         self.speed = 0.005  # Скорость перемещения
-        self.target_x = x  # Начальные координаты цели
+        self.target_x = x
         self.target_y = y
         self.attack = False
         self.first = True
@@ -267,6 +375,9 @@ class Fiend(Character):
             if not self.attack:
                 self.anim_number = 0
                 self.attack = True
+                global count_to_death
+                # попадание
+                count_to_death += 1
         super().update()
 
 
@@ -369,6 +480,8 @@ def terminate():
 
 
 def play_cycle():
+    global total
+    running = True
     torch_count = 0
     door_count = 0
     player_count = 0
@@ -382,7 +495,14 @@ def play_cycle():
     player = generate_level(level)
     door_intersection = False
     down_hold = up_hold = right_hold = left_hold = False
-    while True:
+    while running:
+        global count_to_death
+        if count_to_death == 4:
+            # переход к финальному окну
+            running = False
+            count_to_death = 0
+            total //= 2
+            final_window()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
@@ -418,6 +538,7 @@ def play_cycle():
                     match event.button:
                         case 1:
                             if not player.attack:
+                                player.attack_stop = False
                                 player.anim_number = 0
                                 player.attack = True
                         case 3:
@@ -455,6 +576,8 @@ def play_cycle():
                 level = load_level('map_2.txt')
             elif number == '2':
                 level = load_level('map_3.txt')
+            elif number == '3':
+                final_window()
             player = generate_level(level)
             door_intersection = False
 
@@ -492,10 +615,19 @@ def play_cycle():
                     player.moving = False
                     break
 
-            for fiend in fiends:
-                if not fiend.attack:
-                    fiend.set_target(player)
-                # fiend.moving = True
+        for sprite in fiends:
+            # print(fiend.hp)
+            if player.attack:
+                if pygame.sprite.collide_mask(player, sprite):
+                    if not player.attack_stop:
+                        sprite.hp -= 1
+                        player.attack_stop = True
+                if sprite.hp <= 0:
+                    total += 300
+                    sprite.shadow.kill()
+                    sprite.kill()
+            if not sprite.attack:
+                sprite.set_target(player)
 
         torch_count = (torch_count + 1) % (FPS / 2)
         door_count = (door_count + 1) % (FPS / 4)
@@ -508,11 +640,6 @@ def play_cycle():
             player.anim_number += 1
             for fiend in fiends:
                 fiend.anim_number += 1
-
-
-
-        """ПЕРЕМЕННАЯ ДЛЯ ИТОГОВОГО СЧЕТА"""
-        count = 1000
 
         screen.fill('black')
 
@@ -529,4 +656,4 @@ def play_cycle():
 
 
 screen = pygame.display.set_mode(size)
-play_cycle()
+main_window()

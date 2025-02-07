@@ -1,14 +1,14 @@
 #
-rLLLLLLLLLR
+rLLLL3LLLLR
+r.........R
+r....F....R
+r.........T
+r.........R
+r.F.......R
+r.........T
 r.........R
 r.........R
-r...rrr...T
-r...r r...R
-r...r r...R
-r...r r...T
-r...r r...R
-r...r r...R
-r...rrr...T
+r...F.....T
 r.......P.R
 r.........R
 rrrrrrrrrrr
