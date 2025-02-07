@@ -115,7 +115,6 @@ def final_window():
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     if button_coord2.collidepoint(event.pos):
                         running = False
-                        main_window()
             pygame.draw.rect(button_surface, (255, 255, 255), (0, 0, 150, 50))
             button_surface.blit(button_text, text_coord)
             screen.blit(button_surface, (button_coord.x, button_coord.y))
@@ -481,6 +480,7 @@ def terminate():
 
 def play_cycle():
     global total
+    total = 0
     running = True
     torch_count = 0
     door_count = 0
