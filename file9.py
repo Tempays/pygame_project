@@ -7,6 +7,8 @@ import pygame
 # счетчик попадпний
 count_to_death = 0
 total = 0
+kills_count = 0
+full_map = 0
 
 FPS = 144
 clock = pygame.time.Clock()
@@ -32,6 +34,73 @@ doors = dict()
 doors['map.txt'] = '1', 'map_2.txt'
 
 
+def grades():
+    pygame.init()
+
+    clock = pygame.time.Clock()
+    screen = pygame.display.set_mode((1000, 800))
+    pygame.display.set_caption('Pygame Кликабельная кнопка')
+    font = pygame.font.Font(None, 24)
+    button_surface = pygame.Surface((600, 100))
+    text = font.render("Пройдите все комнаты.", True, (0, 0, 0))
+    text_rect = text.get_rect(
+        center=(button_surface.get_width() / 2,
+                button_surface.get_height() / 2))
+    button_rect = pygame.Rect(250, 100, 600, 100)
+    button_surface2 = pygame.Surface((600, 100))
+    text2 = font.render("Пройдите все комнаты, убив всех врагов.", True, (0, 0, 0))
+    text_rect2 = text.get_rect(
+        center=(button_surface.get_width() / 2,
+                button_surface.get_height() / 2))
+    button_rect2 = pygame.Rect(250, 250, 600, 100)
+    button_surface3 = pygame.Surface((700, 100))
+    text3 = font.render("Пройдите все комнаты, не убив при этом ни одного врага.", True, (0, 0, 0))
+    text_rect3 = text.get_rect(
+        center=(button_surface.get_width() / 2,
+                button_surface.get_height() / 2))
+    button_rect3 = pygame.Rect(250, 400, 700, 100)
+    button_surface4 = pygame.Surface((150, 50))
+    text4 = font.render("Выход", True, (0, 0, 0))
+    text_rect4 = text4.get_rect(
+        center=(button_surface4.get_width() / 2,
+                button_surface4.get_height() / 2))
+    button_rect4 = pygame.Rect(600, 600, 150, 50)
+    running = True
+
+    while running:
+        clock.tick(60)
+        screen.fill((100, 125, 200))
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if button_rect4.collidepoint(event.pos):
+                    main_window()
+        pygame.draw.rect(button_surface, (255, 255, 255), (0, 0, 600, 100))
+        button_surface.blit(text, text_rect)
+        screen.blit(button_surface, (button_rect.x, button_rect.y))
+        pygame.draw.rect(button_surface2, (255, 255, 255), (0, 0, 600, 100))
+        button_surface2.blit(text2, text_rect2)
+        screen.blit(button_surface2, (button_rect2.x, button_rect2.y))
+        pygame.draw.rect(button_surface3, (255, 255, 255), (0, 0, 700, 100))
+        button_surface3.blit(text3, text_rect3)
+        screen.blit(button_surface3, (button_rect3.x, button_rect3.y))
+        if button_rect4.collidepoint(pygame.mouse.get_pos()):
+            pygame.draw.rect(button_surface4, (255, 215, 0), (0, 0, 148, 48))
+        else:
+            pygame.draw.rect(button_surface4, (0, 0, 0), (0, 0, 150, 50))
+            pygame.draw.rect(button_surface4, (255, 255, 255), (0, 0, 148, 48))
+        button_surface4.blit(text4, text_rect4)
+        screen.blit(button_surface4, (button_rect4.x, button_rect4.y))
+        first_p = pygame.image.load("data/passive3_2.png")
+        second_p = pygame.image.load("data/passive4_2.png")
+        third_p = pygame.image.load("data/active7_2.png")
+        screen.blit(first_p, (100, 100))
+        screen.blit(second_p, (100, 250))
+        screen.blit(third_p, (100, 400))
+        pygame.display.update()
+
+
 def main_window():
     button_surface = pygame.Surface((150, 50))
     button_font = pygame.font.Font(None, 24)
@@ -42,6 +111,10 @@ def main_window():
     button_coord2 = pygame.Rect((WIDTH - 150) // 2, (HEIGHT - 50) // 2, 150, 50)
     button_text2 = button_font.render("Выход", True, (0, 0, 0))
     text_coord2 = button_text.get_rect(center=(button_surface2.get_width() / 2, button_surface2.get_height() / 2))
+    button_surface3 = pygame.Surface((170, 50))
+    button_coord3 = pygame.Rect((875, 590, 170, 50))
+    button_text3 = button_font.render("Достижения", True, (0, 0, 0))
+    text_coord3 = button_text.get_rect(center=(button_surface2.get_width() / 2, button_surface2.get_height() / 2))
 
     if __name__ == '__main__':
         pygame.init()
@@ -68,6 +141,8 @@ def main_window():
                     if button_coord2.collidepoint(event.pos):
                         running = False
                         pygame.quit()
+                    if button_coord3.collidepoint(event.pos):
+                        grades()
             if button_coord.collidepoint(pygame.mouse.get_pos()):
                 pygame.draw.rect(button_surface, (255, 215, 0), (0, 0, 148, 48))
             else:
@@ -82,6 +157,13 @@ def main_window():
                 pygame.draw.rect(button_surface2, (255, 255, 255), (0, 0, 148, 48))
             button_surface2.blit(button_text2, text_coord2)
             screen.blit(button_surface2, (button_coord2.x, button_coord2.y))
+            if button_coord3.collidepoint(pygame.mouse.get_pos()):
+                pygame.draw.rect(button_surface3, (255, 215, 0), (0, 0, 168, 48))
+            else:
+                pygame.draw.rect(button_surface3, (0, 0, 0), (0, 0, 170, 50))
+                pygame.draw.rect(button_surface3, (255, 255, 255), (0, 0, 168, 48))
+            button_surface3.blit(button_text3, text_coord3)
+            screen.blit(button_surface3, (button_coord3.x, button_coord3.y))
             pygame.display.flip()
 
 
@@ -97,6 +179,11 @@ def final_window():
     button_coord2 = pygame.Rect(240, 220, 150, 50)
     button_text2 = button_font.render("В меню", True, (0, 0, 0))
     text_coord2 = button_text.get_rect(center=(button_surface2.get_width() / 2, button_surface2.get_height() / 2))
+    button_surface3 = pygame.Surface((500, 120))
+    button_text3 = button_font.render("", True, (0, 0, 0))
+    text_coord3 = button_text.get_rect(center=(button_surface.get_width() / 2, button_surface.get_height() / 2))
+    button_coord3 = pygame.Rect(100, 300, 500, 120)
+
 
     if __name__ == '__main__':
         pygame.init()
@@ -128,6 +215,20 @@ def final_window():
                 pygame.draw.rect(button_surface2, (255, 255, 255), (0, 0, 148, 48))
             button_surface2.blit(button_text2, text_coord2)
             screen.blit(button_surface2, (button_coord2.x, button_coord2.y))
+            pygame.draw.rect(button_surface3, (255, 255, 255), (0, 0, 600, 120))
+            button_surface3.blit(button_text3, text_coord3)
+            screen.blit(button_surface3, (button_coord3.x, button_coord3.y))
+            first_p = pygame.image.load("data/passive3_2.png")
+            second_p = pygame.image.load("data/passive4_2.png")
+            third_p = pygame.image.load("data/active7_2.png")
+            global kills_count
+            global full_map
+            if full_map == 1:
+                screen.blit(first_p, (120, 310))
+            if kills_count == 4:
+                screen.blit(second_p, (270, 310))
+            if kills_count == 0 and full_map == 1:
+                screen.blit(third_p, (400, 310))
             pygame.display.flip()
 
 
@@ -482,6 +583,10 @@ def terminate():
 
 
 def play_cycle():
+    global full_map
+    global kills_count
+    full_map = 0
+    kills_count = 0
     global total
     total = 0
     running = True
@@ -582,6 +687,7 @@ def play_cycle():
                 level = load_level('map_3.txt')
                 count_to_death = 0
             elif number == '3':
+                full_map = 1
                 final_window()
             player = generate_level(level)
             door_intersection = False
@@ -631,6 +737,7 @@ def play_cycle():
                     total += 300
                     sprite.shadow.kill()
                     sprite.kill()
+                    kills_count += 1
             if not sprite.attack:
                 sprite.set_target(player)
 
